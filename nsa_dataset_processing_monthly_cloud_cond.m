@@ -12,10 +12,9 @@ unav = [];
 for icase=0:3
     disp(icase)
     clear monthly;
-    month_count = 1;
     for iyear =1:numel(year)
         for imonth = 1:numel(month)
-            
+            month_count = (iyear - 1) * 12 + imonth;
             condition_list = [
                 (iyear == 13) && ismember(imonth, [9,10,11,12]);
                 (iyear == 14) && ismember(imonth, [1,2,3,4,5,9,10]); % Missing and then partial data because crashing file
@@ -32,7 +31,6 @@ for icase=0:3
                 % (iyear ==9) && (ismember(imonth,[1,2,3,4,5]));
                 % (iyear==8)&&(ismember(imonth,[10,11,12]));
             ];
-            month_count = (iyear - 1) * 12 + imonth;
             if any(condition_list)
                 monthly.radiance(:,month_count) = NaN(2904,1);
                 monthly.std(:,month_count) = NaN(2904,1);
