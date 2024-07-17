@@ -63,8 +63,8 @@ disp(threshold)
 noise_corrected = noise;
 noise_corrected_2 = noise; % second dataset, more conservative
 for i = 1:length(problem_period)
-    noise_corrected(problem_period(i)).lwskynen_tf(noise_corrected(problem_period(i)).lwskynen_tf<=threshold) = 1;
-    noise_corrected_2(problem_period(i)).lwskynen_tf(noise_corrected_2(problem_period(i)).lwskynen_tf<=2) = 1;
+    noise_corrected(problem_period(i)).lwskynen_tf(noise_corrected(problem_period(i)).lwskynen<=threshold) = 1;
+    noise_corrected_2(problem_period(i)).lwskynen_tf(noise_corrected_2(problem_period(i)).lwskynen<=2) = 1;
 end
 
 
