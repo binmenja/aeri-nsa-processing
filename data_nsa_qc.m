@@ -5,8 +5,8 @@ clc;
 month = ["01","02","03","04","05","06","07","08","09","10","11","12"];
 year  = ["1998","1999","2000","2001","2002","2003","2004","2005","2006","2007","2008","2009","2010","2011","2012","2013","2014","2015","2016","2017","2018","2019","2020","2021","2022","2023"];
 
-for iyear=26
-    for imonth=9:12
+for iyear=1:25
+    for imonth=12
 
         clearvars -except iyear imonth month year;
 	    disp(imonth)
@@ -20,11 +20,11 @@ for iyear=26
         nsa_qc.airTemp = NaN(1,1);
 	    nsa_qc.LWresponsivity = NaN(71,1);
         %nsa_qc.lwhbbnen = NaN(1,1)
-        if iyear == 8 && ismember(imonth,[10,11,12]) || iyear ==9 && ismember(imonth,[1,2,3,4,5,6])
-                    filefolder=fullfile('/home/binmenja/projects/rrg-yihuang-ad/binmenja/aeri/nsa/data_summary_s01');
-        else
+        %if iyear == 8 && ismember(imonth,[10,11,12]) || iyear ==9 && ismember(imonth,[1,2,3,4,5,6])
+                    %filefolder=fullfile('/home/binmenja/projects/rrg-yihuang-ad/binmenja/aeri/nsa/data_summary_s01');
+        %else
             filefolder=fullfile('/lustre03/project/rrg-yihuang-ad/binmenja/aeri/nsa/data_summary');
-        end
+        %end
         date_index = strcat(year(iyear),month(imonth));
 
         if ~isempty(dir(strcat(filefolder,'/*.',year(iyear),month(imonth),'*.cdf')))
@@ -37,12 +37,12 @@ for iyear=26
 
         day_count = length(dir_output);
         filename = {dir_output.name};
-        if iyear == 8 && ismember(imonth,[10,11,12]) || iyear ==9 && ismember(imonth,[1,2,3,4,5,6])
-                filename=strcat('/home/binmenja/projects/rrg-yihuang-ad/binmenja/aeri/nsa/data_summary_s01/',filename);
-        else
+        %if iyear == 8 && ismember(imonth,[10,11,12]) || iyear ==9 && ismember(imonth,[1,2,3,4,5,6])
+                %filename=strcat('/home/binmenja/projects/rrg-yihuang-ad/binmenja/aeri/nsa/data_summary_s01/',filename);
+        %else
             filename = strcat('/lustre03/project/rrg-yihuang-ad/binmenja/aeri/nsa/data_summary/',filename);
             disp(filename)
-        end
+        %end
         for i=1:day_count
 	
             finfo = ncinfo(filename{i});

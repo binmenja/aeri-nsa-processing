@@ -8,24 +8,8 @@ noise = struct('second',[],'lwskynen',[],'lwskynen_tf',[],'hatch',[]);
 for iyear=1:26
     for imonth=1:12
         month_count = (iyear - 1) * 12 + imonth;
-        condition_list = [
-            (iyear == 13) && ismember(imonth, [9,10,11,12]);
-            (iyear == 14) && ismember(imonth, [1,2,3,4,5,9,10]); % Missing and then partial data because crashing file
-            (iyear ==15) && ismember(imonth, [12]); % missing data
-            (iyear == 16) && (imonth == 1); % missing data
-            (iyear == 19) && (ismember(imonth,[10])); % Stirling cooler bad state and metrology laser problem.
-            (iyear == 23) && (imonth == 8);
-            (iyear == 12) && ismember(imonth,[1,2,3]); % Intermittent incorrect black body support temperature
-            (iyear == 1) && (imonth == 1);
-            (iyear == 2) && ismember(imonth, [1,2,5]);
-            (iyear == 3) && ismember(imonth, [11,12]);
-            (iyear == 19) && (imonth == 10); % Metrology laser problem
-            (iyear == 5) && ismember(imonth, [3,4,5,6,7]); % Missing data
-            %(iyear ==9) && (ismember(imonth,[1,2,3,4,5]));
-            %(iyear==8)&&(ismember(imonth,[10,11,12]));
-        ];
 
-        if any(condition_list)
+        if should_skip(iyear, imonth)
             noise(month_count).lwskynen = [];
             noise(month_count).lwskynen_tf = [];
             noise(month_count).second = [];

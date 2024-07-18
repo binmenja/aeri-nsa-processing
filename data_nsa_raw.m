@@ -8,56 +8,16 @@ year  = ["1998","1999","2000","2001","2002","2003","2004","2005","2006","2007","
 load("nsaC1_wnum.mat")
 
 
-for iyear=26
+for iyear=1:26
     for imonth=1:12
-        condition_list = [
-            (iyear == 13) && ismember(imonth, [9,10,11,12]);
-            (iyear == 14) && ismember(imonth, [1,2,3,4,5,9,10]); % Missing and then partial data because crashing file
-            (iyear ==15) && ismember(imonth, [12]); % missing data
-            (iyear == 16) && (imonth == 1); % missing data
-            (iyear == 19) && (ismember(imonth,[10])); % Stirling cooler bad state and metrology laser problem.
-            (iyear == 23) && (imonth == 8);
-            (iyear == 12) && ismember(imonth,[1,2,3]); % Intermittent incorrect black body support temperature
-            (iyear == 1) && (imonth == 1);
-            (iyear == 2) && ismember(imonth, [1,2,5]);
-            (iyear == 3) && ismember(imonth, [11,12]);
-            (iyear == 19) && (imonth == 10); % Metrology laser problem
-            (iyear == 5) && ismember(imonth, [3,4,5,6,7]); % Missing data
-            % (iyear ==9) && (ismember(imonth,[1,2,3,4,5]));
-            % (iyear==8)&&(ismember(imonth,[10,11,12]));
-        ];
-
-        if any(condition_list)
-            %monthly_time(month_count) = strcat(year(iyear), month(imonth));
-            %month_count = month_count + 1;
+        month_count = (iyear - 1) * 12 + imonth;
+        
+        if should_skip(iyear, imonth)
             continue;
         end
 
-       % p1=(iyear==1)&&(ismember(imonth,[10,11,12]));
-       % p2=ismember(iyear,[2,3]);
-       % p3=(iyear==4)&&(ismember(imonth,[1,2,3,4,5,6]));
-
-       % p4=(iyear==4)&&(ismember(imonth,[7,8,9,10,11,12]));
-       % p5=ismember(iyear,[5,6,7]);
-       % p6=(iyear==8)&&(ismember(imonth,[1,2,3,4,5,6,7,8]));
-
-       % p7=(iyear==9)&&(ismember(imonth,[5,6,7,8,9,10,11]));
-
-       % p8=(iyear==9)&&(ismember(imonth,[11,12]));
-       % p9=ismember(iyear,[10,11,12,13,14,15,16,17,18,19]);
-
-       % if p1||p2||p3||p8||p9||p4||p5||p6
-            bandsize=2904;
-        %end
-
-        %if p4||p5||p6
-            %bandsize=5435;
-        %end
-
-        %if p7
-        %    bandsize=2655;
-        %end
-
+       
+        bandsize=2904;
 
         disp(iyear)
         disp(imonth)
@@ -70,16 +30,16 @@ for iyear=26
         totalcount = 0;
         nsaC1.radiance = NaN(bandsize,1);
         nsaC1.hatch = NaN(1,1);
-        if iyear == 8 && ismember(imonth,[10,11,12]) || iyear ==9 && ismember(imonth,[1,2,3,4,5,6])
-            filefolder=fullfile('/home/binmenja/projects/rrg-yihuang-ad/binmenja/aeri/nsa/data_ch1_s01');
-            filename=strcat(filefolder,'/*.',year(iyear),month(imonth),'*.cdf');
-            dir_output=dir(filename);
-		    disp(dir_output)
-            day_count = length(dir_output);
-		    disp(day_count)
-            filename = {dir_output.name};
-            filename = strcat('/home/binmenja/projects/rrg-yihuang-ad/binmenja/aeri/nsa/data_ch1_s01/',filename);     
-        else
+        % if iyear == 8 && ismember(imonth,[10,11,12]) || iyear ==9 && ismember(imonth,[1,2,3,4,5,6])
+        %     filefolder=fullfile('/home/binmenja/projects/rrg-yihuang-ad/binmenja/aeri/nsa/data_ch1_s01');
+        %     filename=strcat(filefolder,'/*.',year(iyear),month(imonth),'*.cdf');
+        %     dir_output=dir(filename);
+		%     disp(dir_output)
+        %     day_count = length(dir_output);
+		%     disp(day_count)
+        %     filename = {dir_output.name};
+        %     filename = strcat('/home/binmenja/projects/rrg-yihuang-ad/binmenja/aeri/nsa/data_ch1_s01/',filename);     
+        % else
             filefolder=fullfile('/home/binmenja/direct/aeri/nsa/data_ch1');
             filename=strcat(filefolder,'/*.',year(iyear),month(imonth),'*.cdf');
             dir_output=dir(filename);
@@ -89,9 +49,9 @@ for iyear=26
             filename = {dir_output.name};
             %disp(filename{23})
             filename = strcat('/home/binmenja/direct/aeri/nsa/data_ch1/',filename);
-        end
-        if (iyear > 2) && (iyear <=7) || (iyear == 8) && (imonth <= 9) || (iyear == 9) && (ismember(imonth,[7,8,9,10,11,12])) || (iyear == 10) || (iyear == 11) ;
-       	%if (iyear > 2) && (iyear <=11)
+        %end
+        %if (iyear > 2) && (iyear <=7) || (iyear == 8) && (imonth <= 9) || (iyear == 9) && (ismember(imonth,[7,8,9,10,11,12])) || (iyear == 10) || (iyear == 11) ;
+       	if (iyear > 2) && (iyear <=11)
             filefolder2=fullfile('/home/binmenja/projects/rrg-yihuang-ad/binmenja/aeri/nsa/hatch_neural_network_2');
             filename2=strcat(filefolder2,'/*.',year(iyear),month(imonth),'*.cdf');
             dir_output2=dir(filename2);
@@ -142,8 +102,8 @@ for iyear=26
             		time{i} = ncread(filename{i},'time_offset');
             		realtime{i} = int32(time{i}) + base_time{i};
     		end
-            if iyear > 2 && iyear <=7 || iyear == 8 && imonth <= 9 || (iyear == 9) &&(ismember(imonth,[7,8,9,10,11,12])) || iyear == 10 || iyear == 11;
-	        %if (iyear > 2) && (iyear <=11)
+            %if iyear > 2 && iyear <=7 || iyear == 8 && imonth <= 9 || (iyear == 9) &&(ismember(imonth,[7,8,9,10,11,12])) || iyear == 10 || iyear == 11;
+	        if (iyear > 2) && (iyear <=11)
                 realtime{i} = unique(realtime{i});
 		        [val, posh,hatch_location] = intersect(realtime{i}, realtime2); % time values in common, index in realtime{i}, index in hatch file time
 		        rad = mean_rad{i};

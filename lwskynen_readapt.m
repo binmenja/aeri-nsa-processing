@@ -33,12 +33,13 @@ disp(keep_percent)
 
 
 %% Adjust problematic period 1
-initial_problematic_period = 81:152; %period with NEN higher than usual
+%initial_problematic_period = 81:152; %period with NEN higher than usual
 % Define the problematic period and the range to remove
-range_to_remove = 93:102;
+%range_to_remove = 93:102;
 
 % Use setdiff to remove the range from problematic_period
-problem_period = setdiff(initial_problematic_period, range_to_remove);
+%problem_period = setdiff(initial_problematic_period, range_to_remove);
+problem_period = 81:152;
 
 % Flatten the array if necessary (depending on the structure of your data)
 lwskynen_prob_per = {noise(problem_period).lwskynen};
