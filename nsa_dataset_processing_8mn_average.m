@@ -7,36 +7,20 @@ hour_str = ["00","01","02","03","04","05","06","07","08","09","10","11","12","13
 pathwork = '/home/binmenja/direct/aeri/nsa/matlabscripts/';
 filewnum = 'nsaC1_wnum.mat';
 load(filewnum)
-%load("noise_review.mat") % threshold here is 2.4489 RU instead of 1 RU
-load("noise_2_review.mat")%more conservative noise correction, 2 RU threshold
+load("noise_review.mat") % threshold here is 2.4489 RU instead of 1 RU, keeping around 70% of the data
+%load("noise_2_review.mat")%more conservative noise correction, 2 RU threshold
 addpath('/lustre03/project/6003571/binmenja/matlab/mylib/')
-for iyear=9:26
+
+for iyear=14
 	disp(iyear)
-    for imonth=1:12
+    for imonth=6
 	    disp(imonth)
         month_count = (iyear - 1) * 12 + imonth;
         
-        condition_list = [
-            (iyear == 13) && ismember(imonth, [9,10,11,12]);
-            (iyear == 14) && ismember(imonth, [1,2,3,4,5,9,10]); % Missing and then partial data because crashing file
-            (iyear ==15) && ismember(imonth, [12]); % missing data
-            (iyear == 16) && (imonth == 1); % missing data
-            (iyear == 19) && (ismember(imonth,[10])); % Stirling cooler bad state and metrology laser problem.
-            (iyear == 23) && (imonth == 8);
-            (iyear == 12) && ismember(imonth,[1,2,3]); % Intermittent incorrect black body support temperature
-            (iyear == 1) && (imonth == 1);
-            (iyear == 2) && ismember(imonth, [1,2,5]);
-            (iyear == 3) && ismember(imonth, [11,12]);
-            (iyear == 19) && (imonth == 10); % Metrology laser problem
-            (iyear == 5) && ismember(imonth, [3,4,5,6,7]); % Missing data
-            % (iyear ==9) && (ismember(imonth,[1,2,3,4,5]));
-            % (iyear==8)&&(ismember(imonth,[10,11,12]));
-        ];
-
-        if any(condition_list)
-            %monthly_time(month_count) = strcat(year(iyear), month(imonth));
+        if should_skip(iyear, imonth)
             continue;
         end
+
         filefoldername = strcat('nsaC1_8mn_ave_',year(iyear),month(imonth));
         pathwork = convertStringsToChars(strcat('/home/binmenja/direct/aeri/nsa/2023_rolls_2/processed_8mn_averaged/',filefoldername));
         clearvars -except pathwork iyear turner_985 percent_discarded imonth month year wnum_resp month_count threshold_ts threshold_bt_std spectra_count day day_str hour_str resp responsivity_monthly rad rad_std radiance_monthly nsaC1_wnum hourly_time_monthly monthly_time nsaC1_lwskynen_fixed dateStringsArray noise_corrected noise_corrected_2;
@@ -46,7 +30,7 @@ for iyear=9:26
         filename=strcat(filefolder,'/nsaC1_total.mat');
         load(filename)
         disp(size(nsaC1_total.radiance))
-        discard = (nsaC1_total.hatch ~=1) | (noise_corrected_2(month_count).lwskynen_tf~=1); 
+        discard = (nsaC1_total.hatch ~=1) | (noise_corrected(month_count).lwskynen_tf~=1); 
         disp(sum(discard))
         % Logical mask for negative radiance with higher NESR
         discard_negative = false(size(nsaC1_total.radiance));
@@ -61,7 +45,7 @@ for iyear=9:26
 
         nsaC1_total.radiance(discard_negative(:,1),discard_negative(:,2)) = NaN;
         nsaC1_total.radiance(:,discard) = NaN;
-        %nsaC1_total.lw_nesr_extrapolated(discard(:,1), discard(:,2)) = NaN;
+        nsaC1_total.lw_nesr_extrapolated(discard(:,1), discard(:,2)) = NaN;
         nsaC1_total.time(discard(:,2)) = NaN;
         nsaC1_total.airTemp(discard(:,2)) = NaN;
         nsaC1_total.hatch(discard(:,2)) = NaN;
@@ -74,6 +58,7 @@ for iyear=9:26
 
         nsaC1_8mn.rad = NaN(2904,counting_total);
         nsaC1_8mn.rad_std = NaN(2904,counting_total);
+        nsaC1_8mn.lw_nesr_extrapolated = NaN(2904,counting_total);
              %nsaC1_average.resp = NaN(length(wnum_resp),counting_total);
         nsaC1_8mn.second = NaN;
         nsaC1_8mn.airTemp = NaN;
@@ -99,11 +84,13 @@ for iyear=9:26
                     nsaC1_8mn.airTemp(h) = mean(airTemp_select,'omitnan');
                      %time_select = time_select(~col);
                     nsaC1_8mn.rad(:,h) = mean(rad_select,2,'omitnan');
+                    nsaC1_8mn.lw_nesr_extrapolated(:,h) = mean(nsaC1_total.lw_nesr_extrapolated(:,index),2,'omitnan');
                     nsaC1_8mn.rad_std(:,h) = std(rad_select,0,2,'omitnan');
                      %nsaC1_average.resp(:,h) = mean(resp_select,2,'omitnan');
                     nsaC1_8mn.time(h) = mean(time_select,'omitnan');
             else
                     nsaC1_8mn.rad(:,h) = NaN;
+                    nsaC1_8mn.lw_nesr_extrapolated(:,h) = NaN;
                     nsaC1_8mn.rad_std(:,h) = NaN;
                     nsaC1_8mn.airTemp(h) = NaN;
                      %nsaC1_average.resp(:,h) = NaN;
@@ -116,3 +103,4 @@ for iyear=9:26
         save(fullfile(pathwork,'nsaC1_8mn.mat'),'nsaC1_8mn', '-v7.3');        
     end
 end
+
