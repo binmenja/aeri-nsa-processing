@@ -15,24 +15,10 @@ for icase=0:3
     for iyear =1:numel(year)
         for imonth = 1:numel(month)
             month_count = (iyear - 1) * 12 + imonth;
-            condition_list = [
-                (iyear == 13) && ismember(imonth, [9,10,11,12]);
-                (iyear == 14) && ismember(imonth, [1,2,3,4,5,9,10]); % Missing and then partial data because crashing file
-                (iyear ==15) && ismember(imonth, [12]); % missing data
-                (iyear == 16) && (imonth == 1); % missing data
-                (iyear == 19) && (ismember(imonth,[10])); % Stirling cooler bad state and metrology laser problem.
-                (iyear == 23) && (imonth == 8);
-                (iyear == 12) && ismember(imonth,[1,2,3]); % Intermittent incorrect black body support temperature
-                (iyear == 1) && (imonth == 1);
-                (iyear == 2) && ismember(imonth, [1,2,5]);
-                (iyear == 3) && ismember(imonth, [11,12]);
-                (iyear == 19) && (imonth == 10); % Metrology laser problem
-                (iyear == 5) && ismember(imonth, [3,4,5,6,7]); % Missing data
-                % (iyear ==9) && (ismember(imonth,[1,2,3,4,5]));
-                % (iyear==8)&&(ismember(imonth,[10,11,12]));
-            ];
-            if any(condition_list)
+            
+            if should_skip(iyear, imonth)
                 monthly.radiance(:,month_count) = NaN(2904,1);
+                monthly.lw_nesr_extrapolated(:,month_count) = NaN(2904,1);
                 monthly.std(:,month_count) = NaN(2904,1);
                 monthly.airTemperature(month_count) = NaN;
                 if icase == 0
@@ -47,20 +33,31 @@ for icase=0:3
                 continue;
             end
 
-            load(strcat('/home/binmenja/projects/rrg-yihuang-ad/binmenja/aeri/nsa/2023_rolls_2/processed_hourly/',year(iyear),month(imonth),'/monthly_radiance_',case_string(icase+1),'_',year(iyear),month(imonth),'.mat'));
-            monthly.radiance(:,month_count) = mean(aeri_monthly.radiance_hourly,2,'omitnan');
-            monthly.std(:,month_count) = std(aeri_monthly.radiance_hourly,0,2,'omitmissing');
-            monthly.time(month_count) = strcat(year(iyear),month(imonth));
-            monthly.counting(month_count) = sum(aeri_monthly.spectra_count>0);
-            monthly.case = case_string(icase+1);
-            monthly.airTemperature(month_count) = mean(aeri_monthly.temperature_hourly,'omitnan');
-            if icase == 0
-                monthly.Missing(month_count) = aeri_monthly.Missing;
-                monthly.classMissing8mn(month_count) = aeri_monthly.classMissing8mn;
-                %monthly.airTemperature(month_count) = mean(aeri_monthly.temperature_hourly,'omitnan');
+            for nenCase = 0:1
+                if nenCase == 0
+                    load(strcat('/home/binmenja/projects/rrg-yihuang-ad/binmenja/aeri/nsa/2023_rolls_2/processed_hourly/',year(iyear),month(imonth),'/monthly_radiance_adj_',case_string(icase+1),'_',year(iyear),month(imonth),'.mat'));
+                else
+                    load(strcat('/home/binmenja/projects/rrg-yihuang-ad/binmenja/aeri/nsa/2023_rolls_2/processed_hourly/',year(iyear),month(imonth),'/monthly_radiance',case_string(icase+1),'_',year(iyear),month(imonth),'_nen.mat'));
+                end
+                monthly.radiance(:,month_count) = mean(aeri_monthly.radiance_hourly,2,'omitnan');
+                monthly.lw_nesr_extrapolated(:,month_count) = mean(aeri_monthly.lw_nesr_extrapolated_hourly,2,'omitnan');
+                monthly.std(:,month_count) = std(aeri_monthly.radiance_hourly,0,2,'omitmissing');
+                monthly.time(month_count) = strcat(year(iyear),month(imonth));
+                monthly.counting(month_count) = sum(aeri_monthly.spectra_count>0);
+                monthly.case = case_string(icase+1);
+                monthly.airTemperature(month_count) = mean(aeri_monthly.temperature_hourly,'omitnan');
+                if icase == 0
+                    monthly.Missing(month_count) = aeri_monthly.Missing;
+                    monthly.classMissing8mn(month_count) = aeri_monthly.classMissing8mn;
+                    %monthly.airTemperature(month_count) = mean(aeri_monthly.temperature_hourly,'omitnan');
+                end
+                clear aeri_monthly;
+                if nenCase == 0
+                    save(strcat('/home/binmenja/projects/rrg-yihuang-ad/binmenja/aeri/nsa/2023_rolls_2/processed_monthly/processed_monthly_adj_',case_string(icase+1),'.mat'),'monthly')
+                else
+                    save(strcat('/home/binmenja/projects/rrg-yihuang-ad/binmenja/aeri/nsa/2023_rolls_2/processed_monthly/processed_monthly_',case_string(icase+1),'_nen.mat'),'monthly')
+                end
             end
-            clear aeri_monthly;
-            save(strcat('/home/binmenja/projects/rrg-yihuang-ad/binmenja/aeri/nsa/2023_rolls_2/processed_monthly/processed_monthly_',case_string(icase+1),'.mat'),'monthly')
         end
     end
 end
