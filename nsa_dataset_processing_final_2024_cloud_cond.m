@@ -14,7 +14,7 @@ case_string = ["all_sky","clear", "thick_low","thin_high"];
 possible_cases{2} = [0];
 possible_cases{3} = [1];
 possible_cases{4} = [2];
-possible_cases{1} = [NaN,0,1,2,-1]; % -1 is missing (8mn and 70mn avail.), NaN means only 70mn roundabout missing (8mn is not classified but data for this 8 mn is available)
+possible_cases{1} = [0,1,2]; % [NaN,0,1,2,-1]; % -1 is missing (8mn avail but not enough 70mn avail.), NaN means no 8mn avg. avail. Update: do not include in all-sky when misclassified
 for icase = 0:3
     disp(icase)
     for iyear=1:26
@@ -39,7 +39,7 @@ for icase = 0:3
             filefolder=strcat('/home/binmenja/direct/aeri/nsa/2023_rolls_2/processed_8mn_averaged/nsaC1_8mn_ave_',year(iyear),month(imonth));
             for nenCase = 0:1
                 if nenCase == 0
-                    filename=strcat(filefolder,'/nsaC1_8mn_ajd.mat');
+                    filename=strcat(filefolder,'/nsaC1_8mn_adj.mat');
                 else
                     filename=strcat(filefolder,'/nsaC1_8mn.mat');
                 end
@@ -92,7 +92,7 @@ for icase = 0:3
                 aeri_monthly.temperature_hourly = temperature_hourly;
                 %end
                 % Save hourly radiance data for the month
-                if nenCase = 0
+                if nenCase == 0
                     save_filename = fullfile(save_dir, strcat('monthly_radiance_adj_', case_string(icase+1),'_',year(iyear), month(imonth), '.mat'));
                 else
                     save_filename = fullfile(save_dir, strcat('monthly_radiance_', case_string(icase+1),'_',year(iyear), month(imonth), '.mat'));
