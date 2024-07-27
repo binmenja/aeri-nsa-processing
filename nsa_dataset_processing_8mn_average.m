@@ -25,16 +25,18 @@ disp(iyear)
         clearvars -except pathwork iyear turner_985 percent_discarded imonth month year wnum_resp month_count threshold_ts threshold_bt_std spectra_count day day_str hour_str resp responsivity_monthly rad rad_std radiance_monthly nsaC1_wnum hourly_time_monthly monthly_time nsaC1_lwskynen_fixed dateStringsArray noise_corrected noise_corrected_2;
 
         %filefolder=strcat('/Users/benjaminriot/Desktop/nsaC1_total_','2014','02');
-        for icase =0:1
+        for nenCase =0:1
             filefolder=strcat('/home/binmenja/direct/aeri/nsa/2023_rolls_2/data_total/nsaC1_total_',year(iyear),month(imonth));
             filename=strcat(filefolder,'/nsaC1_total.mat');
             load(filename)
-            disp(size(nsaC1_total.radiance))
-            if icase ==0
+            %disp(size(nsaC1_total.radiance))
+            if nenCase == 0
                 discard = (nsaC1_total.hatch ~=1) | (noise_corrected(month_count).lwskynen_tf~=1); 
+                disp('Sum of discarding based on hatch or noise - adjusted version:')
                 disp(sum(discard))
-            elseif icase ==1
+            else 
                 discard = (nsaC1_total.hatch ~=1) | (nsaC1_total.lwskynen_tf~=1); 
+                disp('Sum of discarding based on hatch or noise - classic version:')
                 disp(sum(discard))
             end
             % Logical mask for negative radiance with higher NESR
@@ -74,10 +76,10 @@ disp(iyear)
             nsaC1_8mn.date = NaT(1,counting_total);
             nsaC1_8mn.time = NaN(1,counting_total);
             for h=1:counting_total % 8mn average
-                    index = find((nsaC1_total.second<initial_second+h*480)&(nsaC1_total.second>=initial_second+(h-1)*480));
+                index = find((nsaC1_total.second<initial_second+h*480)&(nsaC1_total.second>=initial_second+(h-1)*480) & ~isnan(nsaC1_total.time));
                 nsaC1_8mn.second(h) = initial_second+240+(h-1)*480;
                 nsaC1_8mn.date(h) = datetime(1970,1,1,0,0,0,'Format','yyyyMMddHHmm')+seconds(nsaC1_8mn.second(h));
-                if ~isempty(index)
+                if (~isempty(index)) & (length(index) >= 3)
                         rad_select = nsaC1_total.radiance(:,index);
                         
                         % Add a line to delete spectra where NaN values exist
@@ -102,11 +104,13 @@ disp(iyear)
                         nsaC1_8mn.time(h) = NaN;
                 end
             end 
-            system(['mkdir ',pathwork]);
-            if icase ==0
+            if ~exist(pathwork, 'dir')
+                system(['mkdir ', pathwork]);
+            end
+            if nenCase == 0
                 save(fullfile(pathwork,'nsaC1_8mn_adj.mat'),'nsaC1_8mn', '-v7.3');
                 disp('adjusted version saved')
-            elseif icase ==1
+            else 
                 save(fullfile(pathwork,'nsaC1_8mn.mat'),'nsaC1_8mn', '-v7.3');  
                 disp('original version saved')      
             end
