@@ -25,37 +25,48 @@ disp(iyear)
         clearvars -except pathwork iyear turner_985 percent_discarded imonth month year wnum_resp month_count threshold_ts threshold_bt_std spectra_count day day_str hour_str resp responsivity_monthly rad rad_std radiance_monthly nsaC1_wnum hourly_time_monthly monthly_time nsaC1_lwskynen_fixed dateStringsArray noise_corrected noise_corrected_2;
 
         %filefolder=strcat('/Users/benjaminriot/Desktop/nsaC1_total_','2014','02');
-        for nenCase =0:1
-            filefolder=strcat('/home/binmenja/direct/aeri/nsa/2023_rolls_2/data_total/nsaC1_total_',year(iyear),month(imonth));
-            filename=strcat(filefolder,'/nsaC1_total.mat');
+        for nenCase = 0:1
+            filefolder = strcat('/home/binmenja/direct/aeri/nsa/2023_rolls_2/data_total/nsaC1_total_', num2str(year(iyear)), num2str(month(imonth)));
+            filename = strcat(filefolder, '/nsaC1_total.mat');
             load(filename)
-            %disp(size(nsaC1_total.radiance))
+        
+            % Determine discard mask based on nenCase condition
             if nenCase == 0
-                discard = (nsaC1_total.hatch ~=1) | (noise_corrected(month_count).lwskynen_tf~=1); 
+                discard = (nsaC1_total.hatch ~= 1) | (noise_corrected(month_count).lwskynen_tf ~= 1);
+                disp('Number of spectra:')
+                disp(length(nsaC1_total.hatch)) 
                 disp('Sum of discarding based on hatch or noise - adjusted version:')
                 disp(sum(discard))
             else 
-                discard = (nsaC1_total.hatch ~=1) | (nsaC1_total.lwskynen_tf~=1); 
+                discard = (nsaC1_total.hatch ~= 1) | (nsaC1_total.lwskynen_tf ~= 1); 
+                disp('Number of spectra:')
+                disp(length(nsaC1_total.hatch))
                 disp('Sum of discarding based on hatch or noise - classic version:')
                 disp(sum(discard))
             end
-            % Logical mask for negative radiance with higher NESR
-            discard_negative = false(size(nsaC1_total.radiance));
-            [row_neg, col_neg] = find(nsaC1_total.radiance <= 0);
-            for idx = 1:length(row_neg)
-                row = row_neg(idx);
-                col = col_neg(idx);
-                if abs(nsaC1_total.lw_nesr_extrapolated(row, col)) > abs(nsaC1_total.radiance(row, col))
-                    discard_negative(row, col) = true;
-                end
-            end
+        
 
-            nsaC1_total.radiance(discard_negative(:,1),discard_negative(:,2)) = NaN;
-            nsaC1_total.radiance(:,discard) = NaN;
-            nsaC1_total.lw_nesr_extrapolated(discard(:,1), discard(:,2)) = NaN;
-            nsaC1_total.time(discard(:,2)) = NaN;
-            nsaC1_total.airTemp(discard(:,2)) = NaN;
-            nsaC1_total.hatch(discard(:,2)) = NaN;
+            %disp(size(discard))
+        
+            % Create a logical matrix for the condition abs(lw_nesr_extrapolated) > abs(radiance)
+            condition_mask = abs(nsaC1_total.lw_nesr_extrapolated) > abs(nsaC1_total.radiance);
+        
+            % Combine the two conditions: radiance <= 0 and condition_mask
+            combined_mask = (nsaC1_total.radiance <= 0) & condition_mask;
+            %disp(combined_mask)
+
+
+        
+            % Apply the discard mask to the data arrays
+            nsaC1_total.radiance(:, discard) = NaN;
+            nsaC1_total.lw_nesr_extrapolated(:, discard) = NaN;
+            nsaC1_total.time(discard) = NaN;
+            nsaC1_total.airTemp(discard) = NaN;
+            nsaC1_total.hatch(discard) = NaN;
+
+            nsaC1_total.radiance(combined_mask) = NaN;
+            nsaC1_total.lw_nesr_extrapolated(combined_mask) = NaN;
+
             
             
 
@@ -105,8 +116,8 @@ disp(iyear)
                 end
             end 
             if ~exist(pathwork, 'dir')
-                system(['mkdir ', pathwork]);
-            end
+    system(['mkdir ', pathwork]);
+end
             if nenCase == 0
                 save(fullfile(pathwork,'nsaC1_8mn_adj.mat'),'nsaC1_8mn', '-v7.3');
                 disp('adjusted version saved')
