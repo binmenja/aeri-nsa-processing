@@ -15,15 +15,18 @@ possible_cases{2} = [0];
 possible_cases{3} = [1];
 possible_cases{4} = [2];
 possible_cases{1} = [0,1,2]; % [NaN,0,1,2,-1]; % -1 is missing (8mn avail but not enough 70mn avail.), NaN means no 8mn avg. avail. Update: do not include in all-sky when misclassified
-for icase = 0:3
-    disp(icase)
-    for iyear=1:26
-        disp(iyear)
+for iyear=1:26
+    disp(iyear)
 
-        for imonth=1:12
-            disp(imonth)
-            clearvars -except pathwork iyear imonth month year days day_str hour_str filewnum_resp filewnum save_dir_month icase case_string possible_cases;
-
+    for imonth=1:12
+        skip = false;
+        disp(imonth)
+        clearvars -except pathwork iyear imonth month year days day_str hour_str skip filewnum_resp filewnum save_dir_month icase case_string possible_cases;
+        for icase = 0:3
+            if skip
+                continue;
+                disp('skipping due to less than 50% available')
+            end
             radiance_hourly = NaN(2904,24*days(imonth)) ;
             lw_nesr_extrapolated_hourly = NaN(2904,24*days(imonth));
             temperature_hourly = NaN(1,24*days(imonth));
@@ -34,17 +37,21 @@ for icase = 0:3
             if should_skip(iyear, imonth)
                 continue;
             end
+            disp('case:')
+            disp(case_string(icase+1))
 
             %filefolder=strcat('/Users/benjaminriot/Desktop/nsaC1_processed_','2014','02');
             filefolder=strcat('/home/binmenja/direct/aeri/nsa/2023_rolls_2/processed_8mn_averaged/nsaC1_8mn_ave_',year(iyear),month(imonth));
-            for nenCase = 0:1
+            disp(filefolder)
+            for nenCase = 1
                 if nenCase == 0
                     filename=strcat(filefolder,'/nsaC1_8mn_adj.mat');
-                else
+                elseif nenCase == 1
                     filename=strcat(filefolder,'/nsaC1_8mn.mat');
                 end
             
                 load(filename)
+                %disp(nsaC1_8mn.rad(5,:))
             
                 hour_idx = 1;
                 for i=1:days(imonth)
@@ -81,6 +88,11 @@ for icase = 0:3
                     aeri_monthly.Missing = sum(nsaC1_8mn.skyclass == -1); % not enough 70mn
                     disp(aeri_monthly.classMissing8mn)
                     disp(aeri_monthly.Missing)
+                    skip = (sum(spectra_count > 0) < 372);
+                    if skip
+                        disp('skipping because not enough spectra! (less than 50%)')
+                        continue;
+                    end
                 end
                 aeri_monthly.radiance_hourly = radiance_hourly;
                 aeri_monthly.lw_nesr_extrapolated_hourly = lw_nesr_extrapolated_hourly;
@@ -90,17 +102,21 @@ for icase = 0:3
                 aeri_monthly.spectra_count = spectra_count; 
                 %if icase == 0
                 aeri_monthly.temperature_hourly = temperature_hourly;
+                %disp(aeri_monthly.radiance_hourly(5,:))
                 %end
                 % Save hourly radiance data for the month
                 if nenCase == 0
                     save_filename = fullfile(save_dir, strcat('monthly_radiance_adj_', case_string(icase+1),'_',year(iyear), month(imonth), '.mat'));
-                else
+                elseif nenCase == 1
                     save_filename = fullfile(save_dir, strcat('monthly_radiance_', case_string(icase+1),'_',year(iyear), month(imonth), '.mat'));
                 end
-                save(save_filename, 'aeri_monthly', '-v7.3');
+                save(save_filename, 'aeri_monthly', '-v7.3')
+                disp('saved file:')
+                disp(save_filename)
                 clear aeri_monthly;
             end
         end
     end
-end
+end    
+
 
