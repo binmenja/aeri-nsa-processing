@@ -14,25 +14,30 @@ case_string = ["all_sky","clear", "thick_low","thin_high"];
 possible_cases{2} = [0];
 possible_cases{3} = [1];
 possible_cases{4} = [2];
-possible_cases{1} = [0,1,2]; % [NaN,0,1,2,-1]; % -1 is missing (8mn avail but not enough 70mn avail.), NaN means no 8mn avg. avail. Update: do not include in all-sky when misclassified
-for iyear=1:26
+possible_cases{1} = [0,1,2]; % [NaN,0,1,2,-1]; % -1 is missing (8mn avail but not enough 70mn avail.,eg start of day of after restart), NaN means no 8mn avg. avail. Update: do not include in all-sky when misclassified
+
+for iyear = 1:26
     disp(iyear)
 
-    for imonth=1:12
-        skip = false;
+    for imonth = 1:12
         disp(imonth)
-        clearvars -except pathwork iyear imonth month year days day_str hour_str skip filewnum_resp filewnum save_dir_month icase case_string possible_cases;
+        clearvars -except pathwork iyear imonth month year days day_str hour_str filewnum_resp filewnum save_dir_month icase case_string possible_cases;
+        
+        % Initialize a skip flag
+        skip = false;
+
         for icase = 0:3
-            if skip
-                continue;
-                disp('skipping due to less than 50% available')
-            end
-            radiance_hourly = NaN(2904,24*days(imonth)) ;
+            radiance_hourly = NaN(2904,24*days(imonth));
             lw_nesr_extrapolated_hourly = NaN(2904,24*days(imonth));
             temperature_hourly = NaN(1,24*days(imonth));
             rad_std_hourly = NaN(2904,24*days(imonth));
             spectra_count = zeros(1,24*days(imonth));
             hourly_time = strings(24*days(imonth),1);
+            cf = NaN(1,24*days(imonth));
+            thin_fraction = NaN(1,24*days(imonth));
+            thick_fraction = NaN(1,24*days(imonth));
+            clear_fraction = NaN(1,24*days(imonth));
+            available_fraction = NaN(1,24*days(imonth));
 
             if should_skip(iyear, imonth)
                 continue;
@@ -40,83 +45,81 @@ for iyear=1:26
             disp('case:')
             disp(case_string(icase+1))
 
-            %filefolder=strcat('/Users/benjaminriot/Desktop/nsaC1_processed_','2014','02');
-            filefolder=strcat('/home/binmenja/direct/aeri/nsa/2023_rolls_2/processed_8mn_averaged/nsaC1_8mn_ave_',year(iyear),month(imonth));
+            filefolder = strcat('/home/binmenja/direct/aeri/nsa/2023_rolls_2/processed_8mn_averaged/nsaC1_8mn_ave_', year(iyear), month(imonth));
             disp(filefolder)
-            for nenCase = 1
-                if nenCase == 0
-                    filename=strcat(filefolder,'/nsaC1_8mn_adj.mat');
-                elseif nenCase == 1
-                    filename=strcat(filefolder,'/nsaC1_8mn.mat');
-                end
             
-                load(filename)
-                %disp(nsaC1_8mn.rad(5,:))
+            filename = strcat(filefolder, '/nsaC1_8mn.mat');
+            if ~exist(char(filename), 'file')
+                disp(['File not found: ', char(filename)])
+                continue;
+            end
             
-                hour_idx = 1;
-                for i=1:days(imonth)
-                    for j=0:23 % Corrected to 24 hours
-                        %disp(possible_cases{icase+1})
-                        condition_time = find(double(day(nsaC1_8mn.date)) == i & double(hour(nsaC1_8mn.date)) == j & ismember(nsaC1_8mn.skyclass.', possible_cases{icase+1}));
-                        %disp(condition_time)
-                        if isempty(condition_time) | all(isnan(nsaC1_8mn.rad(:,condition_time)))
-                            %disp('empty hour')
-                            hourly_time(hour_idx) = string(strcat(year(iyear),month(imonth),day_str(i),hour_str(j+1))); 
-                            hour_idx = hour_idx + 1;
-                        else
-                            %rad_hourly = mean(nsaC1_8mn.rad(:,condition_time),2, 'omitnan'); % hourly mean
-                            %rad_std_hourly = mean(nsaC1_8mn.rad_std(:,condition_time),2,'omitnan');
+            load(filename)
+            
+            
+            hour_idx = 1;
+            for i = 1:days(imonth)
+                for j = 0:23
+                    % Get the condition time for the current sky condition
+                    condition_time = find(double(day(nsaC1_8mn.date)) == i & double(hour(nsaC1_8mn.date)) == j & ismember(nsaC1_8mn.skyclass.', possible_cases{icase+1}) & all(~isnan(nsaC1_8mn.rad),1));
+                    if icase == 0
+                        % If it's the all-sky case, count the spectra
+                        total_spectra_all_sky(hour_idx) = 0;
+                        if length(condition_time) > 3
+                            disp(sum(nsaC1_8mn.rad(:,condition_time)>=0))
+                            total_spectra_all_sky(hour_idx) = total_spectra_all_sky(hour_idx) + length(condition_time);
+                            % Save the results for all-sky
                             radiance_hourly(:,hour_idx) = mean(nsaC1_8mn.rad(:,condition_time),2, 'omitnan');
                             lw_nesr_extrapolated_hourly(:,hour_idx) = mean(nsaC1_8mn.lw_nesr_extrapolated(:,condition_time),2, 'omitnan');
                             temperature_hourly(hour_idx) = mean(nsaC1_8mn.airTemp(condition_time),2, 'omitnan');
                             rad_std_hourly(:,hour_idx) = std(nsaC1_8mn.rad(:,condition_time),0,2,'omitmissing');
                             spectra_count(hour_idx) = sum(any(~isnan(nsaC1_8mn.rad(:,condition_time)))); % Count hours with non-NaN values
-                            hourly_time(hour_idx) = string(strcat(year(iyear),month(imonth),day_str(i),hour_str(j+1))); 
-                            hour_idx = hour_idx + 1;
+                            hourly_time(hour_idx) = string(strcat(year(iyear), month(imonth), day_str(i), hour_str(j+1)));
+                            cf(hour_idx) = sum(nsaC1_8mn.skyclass(condition_time)>=1)./sum(nsaC1_8mn.skyclass(condition_time)>= 0);
+                            thin_fraction(hour_idx) = sum(nsaC1_8mn.skyclass(condition_time)==2)./sum(nsaC1_8mn.skyclass(condition_time)>= 0);
+                            thick_fraction(hour_idx) = sum(nsaC1_8mn.skyclass(condition_time)==1)./sum(nsaC1_8mn.skyclass(condition_time)>= 0);
+                            clear_fraction(hour_idx) = sum(nsaC1_8mn.skyclass(condition_time)==0)./sum(nsaC1_8mn.skyclass(condition_time)>= 0);
                         end
+                    elseif total_spectra_all_sky(hour_idx) > 3
+                        % For other cases, only calculate if total all-sky spectra > 3
+                        radiance_hourly(:,hour_idx) = mean(nsaC1_8mn.rad(:,condition_time),2, 'omitnan');
+                        lw_nesr_extrapolated_hourly(:,hour_idx) = mean(nsaC1_8mn.lw_nesr_extrapolated(:,condition_time),2, 'omitnan');
+                        temperature_hourly(hour_idx) = mean(nsaC1_8mn.airTemp(condition_time),2, 'omitnan');
+                        rad_std_hourly(:,hour_idx) = std(nsaC1_8mn.rad(:,condition_time),0,2,'omitmissing');
+                        spectra_count(hour_idx) = sum(any(~isnan(nsaC1_8mn.rad(:,condition_time)))); % Count hours with non-NaN values
+                        hourly_time(hour_idx) = string(strcat(year(iyear), month(imonth), day_str(i), hour_str(j+1)));
+                    else
+                        disp('not enough spectra in all-sky to compute hourly mean for other conditions')
                     end
+                    hour_idx = hour_idx + 1;
                 end
-                
-                % Create directory if it doesn't exist
-                save_dir = strcat('/home/binmenja/projects/rrg-yihuang-ad/binmenja/aeri/nsa/2023_rolls_2/processed_hourly/', year(iyear), month(imonth));
-                if ~exist(save_dir, 'dir')
-                    mkdir(save_dir);
-                end
-                % Save hourly radiance data for the month and year
-                if icase == 0
-                    aeri_monthly.classMissing8mn = sum(isnan(nsaC1_8mn.skyclass));
-                    aeri_monthly.Missing = sum(nsaC1_8mn.skyclass == -1); % not enough 70mn
-                    disp(aeri_monthly.classMissing8mn)
-                    disp(aeri_monthly.Missing)
-                    skip = (sum(spectra_count > 0) < 372);
-                    if skip
-                        disp('skipping because not enough spectra! (less than 50%)')
-                        continue;
-                    end
-                end
-                aeri_monthly.radiance_hourly = radiance_hourly;
-                aeri_monthly.lw_nesr_extrapolated_hourly = lw_nesr_extrapolated_hourly;
-                aeri_monthly.rad_std_hourly = rad_std_hourly;
-                aeri_monthly.hourly_time = hourly_time;
-                disp(hourly_time(1))
-                aeri_monthly.spectra_count = spectra_count; 
-                %if icase == 0
-                aeri_monthly.temperature_hourly = temperature_hourly;
-                %disp(aeri_monthly.radiance_hourly(5,:))
-                %end
-                % Save hourly radiance data for the month
-                if nenCase == 0
-                    save_filename = fullfile(save_dir, strcat('monthly_radiance_adj_', case_string(icase+1),'_',year(iyear), month(imonth), '.mat'));
-                elseif nenCase == 1
-                    save_filename = fullfile(save_dir, strcat('monthly_radiance_', case_string(icase+1),'_',year(iyear), month(imonth), '.mat'));
-                end
-                save(save_filename, 'aeri_monthly', '-v7.3')
-                disp('saved file:')
-                disp(save_filename)
-                clear aeri_monthly;
             end
+
+            % Create directory if it doesn't exist
+            save_dir = strcat('/home/binmenja/projects/rrg-yihuang-ad/binmenja/aeri/nsa/2023_rolls_2/processed_hourly/', year(iyear), month(imonth));
+            if ~exist(save_dir, 'dir')
+                mkdir(save_dir);
+            end
+
+            % Save hourly radiance data for the month and year
+            aeri_monthly.radiance_hourly = radiance_hourly;
+            aeri_monthly.lw_nesr_extrapolated_hourly = lw_nesr_extrapolated_hourly;
+            aeri_monthly.rad_std_hourly = rad_std_hourly;
+            aeri_monthly.hourly_time = hourly_time;
+            if icase == 0
+                aeri_monthly.cf = cf;
+                aeri_monthly.thin_fraction = thin_fraction;
+                aeri_monthly.thick_fraction = thick_fraction;
+                aeri_monthly.clear_fraction = clear_fraction;
+                aeri_monthly.available = sum(~isnan(cf))/length(spectra_count);
+                disp('Monthly CF:')
+                disp(mean(cf,'omitnan'))
+                disp('sum clear and cloudy: ')
+                disp(mean(cf,'omitnan') + mean(clear_fraction,'omitnan'))
+            end
+            save_dir_month = strcat(save_dir, '/', case_string(icase+1));
+            save(save_dir_month, 'aeri_monthly')
+            disp('-------------------------')
         end
     end
-end    
-
-
+end

@@ -20,6 +20,12 @@ for icase=0:3
                 monthly.radiance(:,month_count) = NaN(2904,1);
                 monthly.lw_nesr_extrapolated(:,month_count) = NaN(2904,1);
                 monthly.std(:,month_count) = NaN(2904,1);
+                monthly.cf(month_count) = NaN;
+                monthly.clear_fraction(month_count) = NaN;
+                monthly.thin_fraction(month_count) = NaN;
+                monthly.thick_fraction(month_count) = NaN;
+                monthly.available_fraction(month_count) = NaN;
+
                 monthly.airTemperature(month_count) = NaN;
                 if icase == 0
                     monthly.Missing(month_count) = NaN;
@@ -47,8 +53,15 @@ for icase=0:3
                 monthly.case = case_string(icase+1);
                 monthly.airTemperature(month_count) = mean(aeri_monthly.temperature_hourly,'omitnan');
                 if icase == 0
-                    monthly.Missing(month_count) = aeri_monthly.Missing;
-                    monthly.classMissing8mn(month_count) = aeri_monthly.classMissing8mn;
+                    %monthly.Missing(month_count) = aeri_monthly.Missing;
+                    %monthly.classMissing8mn(month_count) = aeri_monthly.classMissing8mn;
+                    monthly.cf(month_count) = mean(aeri_monthly.cf,'omitnan');
+                    monthly.clear_fraction(month_count) = mean(aeri_monthly.clear_fraction,'omitnan');
+                    monthly.thin_fraction(month_count) = mean(aeri_monthly.thin_fraction,'omitnan');
+                    monthly.thick_fraction(month_count) = mean(aeri_monthly.thick_fraction,'omitnan');
+                    monthly.available_fraction(month_count) = aeri_monthly.available;
+                    disp('Total: ')
+                    disp(monthly.cf(month_count)+monthly.clear_fraction(month_count));
                     %monthly.airTemperature(month_count) = mean(aeri_monthly.temperature_hourly,'omitnan');
                 end
                 clear aeri_monthly;
